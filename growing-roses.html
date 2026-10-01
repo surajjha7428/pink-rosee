@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Growing Pink Roses</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:#120820;color:#ffe6ee;font-family:Nunito,system-ui,sans-serif}
+.scene{position:relative;height:calc(100svh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));min-height:480px;overflow:hidden}
+svg{width:100%;height:100%;display:block;overflow:visible}
+.title{position:absolute;left:0;right:0;top:5%;text-align:center;padding:0 16px;opacity:0;pointer-events:none}
+.title.go{animation:rise 2s ease both}
+h1{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:clamp(2.4rem,7vw,4.6rem);line-height:1.05;margin:0;color:#ffd3e3;text-shadow:0 0 30px #ff6fa488}
+.title p{margin:6px 0 0;color:#e9b3c9;font-size:1.05rem}
+#again{position:absolute;left:0;right:0;bottom:4%;margin:0 auto;width:max-content;opacity:0;background:#ee5a92;color:#fff;border:0;border-radius:999px;padding:12px 24px;font:700 1rem Nunito,sans-serif;cursor:pointer}
+#again.go{animation:fade 1.5s ease both}
+#again:hover{background:#d94a7c}
+:focus-visible{outline:3px solid #ffd3e3;outline-offset:3px}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes fade{to{opacity:1}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes unfurl{from{transform:scale(0)}to{transform:scale(1)}}
+@keyframes open{from{transform:scale(0) rotate(-50deg)}to{transform:scale(1) rotate(0)}}
+@keyframes sway{from{transform:rotate(-1.3deg)}to{transform:rotate(1.3deg)}}
+@keyframes twinkle{from{opacity:.15}to{opacity:1}}
+@keyframes drift{0%{transform:translate(0,0);opacity:0}20%{opacity:1}50%{transform:translate(var(--dx),var(--dy))}80%{opacity:1}100%{transform:translate(calc(var(--dx)*-.6),calc(var(--dy)*-1.4));opacity:0}}
+@keyframes fall{0%{transform:translate(0,0) rotate(0);opacity:0}10%{opacity:.9}100%{transform:translate(var(--dx),var(--fy)) rotate(540deg);opacity:0}}
+.stem{fill:none;stroke:#4fa56e;stroke-width:5;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:draw calc(2.6s*var(--S)) linear both}
+.lf,.pt,.gr{transform-box:fill-box;transform-origin:center;animation:unfurl calc(.8s*var(--S)) cubic-bezier(.2,1.3,.4,1) both}
+.lf{transform-origin:0 50%}
+.gr{transform-origin:50% 100%;fill:none;stroke:#2f7a4f;stroke-width:2.2;stroke-linecap:round}
+.pt{animation-name:open;animation-duration:calc(.9s*var(--S))}
+.pt{transform-origin:50% 100%}.bd{transform-origin:center}
+.glow{animation:fade calc(1.5s*var(--S)) ease both;opacity:0}
+.plant{animation:sway ease-in-out infinite alternate}
+.st{animation:twinkle ease-in-out infinite alternate}
+.ff{opacity:0;animation:drift ease-in-out infinite}
+.pf{opacity:0;animation:fall linear infinite}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important}}
+</style>
+</head>
+<body>
+<div class="scene">
+  <svg id="svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMax meet" role="img" aria-label="Pink roses growing from the ground and blooming">
+    <defs>
+      <linearGradient id="sky" gradientUnits="userSpaceOnUse" x1="0" y1="-900" x2="0" y2="570"><stop offset="0" stop-color="#120820"/><stop offset=".6" stop-color="#3a1442"/><stop offset="1" stop-color="#8a2f62"/></linearGradient>
+      <radialGradient id="glow"><stop offset="0" stop-color="#ff7fb0" stop-opacity=".45"/><stop offset="1" stop-color="#ff7fb0" stop-opacity="0"/></radialGradient>
+      <radialGradient id="moonglow"><stop offset="0" stop-color="#ffd9ea" stop-opacity=".35"/><stop offset="1" stop-color="#ffd9ea" stop-opacity="0"/></radialGradient>
+    </defs>
+    <g id="world"></g>
+  </svg>
+  <div class="title" id="title"><h1 id="note"></h1><p id="sub"></p></div>
+  <button id="again" type="button">Grow again</button>
+</div>
+<script>
+// ===== Edit these settings =====
+const CONFIG={
+  roses:7,                 // number of roses (3 to 12)
+  note:'For you',          // big title shown when the roses finish blooming
+  sub:'Pink roses, grown just now',
+  speed:1,                 // 1 = normal, 2 = twice as fast, 0.5 = slower
+  seed:5                   // changes the garden layout
+};
+// ===============================
+const PAL=[
+ ['#fde3ec','#fbc4d6','#f79dba','#e2739d','#b04070'],
+ ['#fbc4d6','#f79dba','#ee6a9a','#d94a7c','#a82c5a'],
+ ['#f98bb4','#ef5f96','#e63a7c','#c42263','#8f1448']];
+const $=id=>document.getElementById(id);
+const rng=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const leaf=L=>`M0 0 Q${L*.5} ${-L*.38} ${L} 0 Q${L*.5} ${L*.38} 0 0Z`;
+let seed=CONFIG.seed;
+
+function build(){
+  const rnd=rng(seed), S=1/CONFIG.speed, n=CONFIG.roses, GY=592;
+  $('svg').style.setProperty('--S',S);
+  let h='<rect x="-3000" y="-3000" width="6800" height="3700" fill="url(#sky)"/>';
+  for(let i=0;i<34;i++) h+=`<circle class="st" cx="${(rnd()*1200-200).toFixed(0)}" cy="${(rnd()*900-600).toFixed(0)}" r="${(.8+rnd()).toFixed(1)}" fill="#fff" style="animation-delay:${(rnd()*3).toFixed(1)}s;animation-duration:${(2+rnd()*3).toFixed(1)}s"/>`;
+  h+='<circle cx="690" cy="120" r="95" fill="url(#moonglow)"/><circle cx="690" cy="120" r="34" fill="#ffe9f1"/>';
+  PAL.forEach((p,k)=>{h+=`<linearGradient id="go${k}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${p[4]}"/><stop offset=".3" stop-color="${p[3]}"/><stop offset=".7" stop-color="${p[1]}"/><stop offset="1" stop-color="${p[0]}"/></linearGradient><linearGradient id="gi${k}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${p[4]}"/><stop offset=".3" stop-color="${p[3]}"/><stop offset=".7" stop-color="${p[2]}"/><stop offset="1" stop-color="${p[1]}"/></linearGradient>`});
+  let end=0;
+  for(let i=0;i<n;i++){
+    const x0=110+(i+.5)/n*580+(rnd()-.5)*24, H=210+rnd()*190, x1=x0+(rnd()-.5)*90, y1=GY-H;
+    const bx=(x0+x1)/2+(rnd()-.5)*120, by=GY-H*.5;
+    const d=(.4+i*.55+rnd()*.15)*S, dur=2.6*S, hb=d+dur;
+    const P=[[x0,GY],[bx,by],[x1,y1]];
+    const pt=t=>[0,1].map(k=>(1-t)**2*P[0][k]+2*(1-t)*t*P[1][k]+t*t*P[2][k]);
+    const tg=t=>Math.atan2(2*(1-t)*(P[1][1]-P[0][1])+2*t*(P[2][1]-P[1][1]),2*(1-t)*(P[1][0]-P[0][0])+2*t*(P[2][0]-P[1][0]))*180/Math.PI;
+    let s=`<g class="plant" style="transform-origin:${x0.toFixed(0)}px ${GY}px;animation-duration:${(5+rnd()*3).toFixed(1)}s">`;
+    s+=`<path class="stem" pathLength="1" d="M${x0.toFixed(1)} ${GY} Q${bx.toFixed(1)} ${by.toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}" style="animation-delay:${d.toFixed(2)}s"/>`;
+    for(let k=0;k<3;k++){
+      const t=.28+k*.24+rnd()*.06, [px,py]=pt(t), side=k%2?1:-1, L=36+rnd()*18;
+      s+=`<g transform="translate(${px.toFixed(1)} ${py.toFixed(1)}) rotate(${(tg(t)+side*58).toFixed(0)})"><g class="lf" style="animation-delay:${(d+t*dur).toFixed(2)}s"><path d="${leaf(L)}" fill="${k%2?'#2f7a4f':'#3c9060'}"/><path d="M0 0L${L.toFixed(0)} 0" stroke="#1d5a3a" stroke-width="1.2" fill="none"/></g></g>`;
+    }
+    const r=Math.max(24,46-n*1.6+rnd()*8), p=PAL[Math.floor(rnd()*3)];
+    s+=`<g transform="translate(${x1.toFixed(1)} ${y1.toFixed(1)})"><circle class="glow" r="${(r*2.4).toFixed(0)}" fill="url(#glow)" style="animation-delay:${(hb+1.2*S).toFixed(2)}s"/>`;
+    for(let a=25;a<=155;a+=32.5) s+=`<g transform="rotate(${a})"><path class="lf" d="${leaf(r*1.15)}" fill="#2f7a4f" style="animation-delay:${hb.toFixed(2)}s"/></g>`;
+    const pi=PAL.indexOf(p);
+    s+=`<g transform="rotate(${(rnd()*360).toFixed(0)})"><circle class="pt bd" r="${(r*.72).toFixed(1)}" fill="${p[3]}" style="animation-delay:${(hb+.2*S).toFixed(2)}s"/>`;
+    [[6,1,.95,0],[5,.78,.8,1],[4,.58,.62,2],[3,.38,.45,3]].forEach(([c,lf,wd,k])=>{
+      const L=r*lf, W=r*wd, g=(k<2?'go':'gi')+pi, ring=3-k;
+      const pd=`M0 0C${-W*.6} ${-L*.15} ${-W*.75} ${-L*.65} ${-W*.35} ${-L*.92}Q0 ${-L*1.04} ${W*.35} ${-L*.92}C${W*.75} ${-L*.65} ${W*.6} ${-L*.15} 0 0Z`;
+      for(let j=0;j<c;j++){
+        const an=j*360/c+k*(23+rnd()*10), dl=(hb+(.3+ring*.28)*S+j*.05).toFixed(2);
+        s+=`<g transform="rotate(${an.toFixed(0)})"><g class="pt" style="animation-delay:${dl}s"><path d="${pd}" transform="translate(0 ${(r*.05).toFixed(1)})" fill="#2a0a1a" opacity=".22"/><path d="${pd}" fill="url(#${g})" stroke="${p[4]}" stroke-opacity=".4" stroke-width=".8"/><path d="M${-W*.38} ${-L*.9}Q0 ${-L*1.03} ${W*.38} ${-L*.9}" stroke="${p[0]}" stroke-width="1.4" fill="none" opacity=".75"/></g></g>`;
+      }
+    });
+    s+=`<path class="pt bd" d="M${-r*.07} ${r*.03}Q${-r*.04} ${-r*.1} ${r*.06} ${-r*.06}Q${r*.12} ${r*.02} ${r*.02} ${r*.08}" stroke="${p[4]}" stroke-width="1.3" fill="none" style="animation-delay:${(hb+.3*S).toFixed(2)}s"/>`;
+    s+='</g></g></g>';
+    end=Math.max(end,hb+2.1*S);
+    h+=s;
+  }
+  h+='<path d="M-3000 3000 L-3000 572 L0 572 Q200 556 400 568 T800 570 L3800 570 L3800 3000Z" fill="#22101d"/>';
+  for(let i=0;i<70;i++){const x=rnd()*880-40,dx=(rnd()-.5)*18,g=14+rnd()*22;
+    h+=`<path class="gr" d="M${x.toFixed(0)} 600 Q${(x+dx).toFixed(0)} ${(590-g/2).toFixed(0)} ${(x+dx*1.6).toFixed(0)} ${(596-g).toFixed(0)}" style="animation-delay:${(rnd()*2).toFixed(2)}s"/>`;}
+  for(let i=0;i<16;i++) h+=`<circle class="ff" cx="${(40+rnd()*720).toFixed(0)}" cy="${(250+rnd()*300).toFixed(0)}" r="2.2" fill="#ffd0e4" style="--dx:${((rnd()-.5)*90).toFixed(0)}px;--dy:${((rnd()-.5)*70).toFixed(0)}px;animation-delay:${(2+rnd()*6).toFixed(1)}s;animation-duration:${(7+rnd()*5).toFixed(1)}s"/>`;
+  for(let i=0;i<12;i++){const x=100+rnd()*600,y=150+rnd()*160,c=PAL[Math.floor(rnd()*3)][1];
+    h+=`<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)})"><ellipse class="pf" rx="7" ry="4" fill="${c}" style="--dx:${((rnd()-.5)*140).toFixed(0)}px;--fy:${(560-y).toFixed(0)}px;animation-delay:${(end+i*1.1).toFixed(1)}s;animation-duration:${(6+rnd()*3).toFixed(1)}s"/></g>`;}
+  $('world').innerHTML=h;
+  $('note').textContent=CONFIG.note; $('sub').textContent=CONFIG.sub;
+  [$('title'),$('again')].forEach(el=>{el.classList.remove('go');void el.offsetWidth;el.style.animationDelay=(end*.85).toFixed(1)+'s';el.classList.add('go')});
+}
+$('again').onclick=()=>{seed=Math.floor(Math.random()*9999)+1;build()};
+build();
+</script>
+</body>
+</html>
